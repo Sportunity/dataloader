@@ -1,35 +1,4 @@
-/* @flow */
-/**
- *  Copyright (c) 2015, Facebook, Inc.
- *  All rights reserved.
- *
- *  This source code is licensed under the BSD-style license found in the
- *  LICENSE file in the root directory of this source tree. An additional grant
- *  of patent rights can be found in the PATENTS file in the same directory.
- */
-
-// A Function, which when given an Array of keys, returns a Promise of an Array
-// of values or Errors.
-export type BatchLoadFn<K, V> =
-  (keys: $ReadOnlyArray<K>) => Promise<$ReadOnlyArray<V | Error>>;
-
-// Optionally turn off batching or caching or provide a cache key function or a
-// custom cache instance.
-export type Options<K, V> = {
-  batch?: boolean;
-  maxBatchSize?: number;
-  cache?: boolean;
-  cacheKeyFn?: (key: any) => any;
-  cacheMap?: CacheMap<K, Promise<V>>;
-};
-
-// If a custom cache is provided, it must be of this type (a subset of ES6 Map).
-export type CacheMap<K, V> = {
-  get(key: K): V | void;
-  set(key: K, value: V): any;
-  delete(key: K): any;
-  clear(): any;
-};
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
  * A `DataLoader` creates a public API for loading data from a particular
@@ -41,16 +10,16 @@ export type CacheMap<K, V> = {
  * different access permissions and consider creating a new instance per
  * web request.
  */
-class DataLoader<K, V> {
-  constructor(
-    batchLoadFn: BatchLoadFn<K, V>,
-    options?: Options<K, V>
-  ) {
+
+
+// Optionally turn off batching or caching or provide a cache key function or a
+// custom cache instance.
+var DataLoader = function () {
+  function DataLoader(batchLoadFn, options) {
+    _classCallCheck(this, DataLoader);
+
     if (typeof batchLoadFn !== 'function') {
-      throw new TypeError(
-        'DataLoader must be constructed with a function which accepts ' +
-        `Array<key> and returns Promise<Array<value>>, but got: ${batchLoadFn}.`
-      );
+      throw new TypeError('DataLoader must be constructed with a function which accepts ' + ('Array<key> and returns Promise<Array<value>>, but got: ' + batchLoadFn + '.'));
     }
     this._batchLoadFn = batchLoadFn;
     this._options = options;
@@ -59,20 +28,16 @@ class DataLoader<K, V> {
   }
 
   // Private
-  _batchLoadFn: BatchLoadFn<K, V>;
-  _options: ?Options<K, V>;
-  _promiseCache: CacheMap<K, Promise<V>>;
-  _queue: LoaderQueue<K, V>;
+
 
   /**
    * Loads a key, returning a `Promise` for the value represented by that key.
    */
-  load(key: K): Promise<V> {
+  DataLoader.prototype.load = function load(key, projection) {
+    var _this = this;
+
     if (key === null || key === undefined) {
-      throw new TypeError(
-        'The loader.load() function must be called with a value,' +
-        `but got: ${String(key)}.`
-      );
+      throw new TypeError('The loader.load() function must be called with a value,' + ('but got: ' + String(key) + '.'));
     }
 
     // Determine options
@@ -91,20 +56,22 @@ class DataLoader<K, V> {
     }
 
     // Otherwise, produce a new Promise for this value.
-    var promise = new Promise((resolve, reject) => {
+    var promise = new Promise(function (resolve, reject) {
       // Enqueue this Promise to be dispatched.
-      this._queue.push({ key, resolve, reject });
+      _this._queue.push({ key: key, projection, resolve: resolve, reject: reject });
 
       // Determine if a dispatch of this queue should be scheduled.
       // A single dispatch should be scheduled per queue at the time when the
       // queue changes from "empty" to "full".
-      if (this._queue.length === 1) {
+      if (_this._queue.length === 1) {
         if (shouldBatch) {
           // If batching, schedule a task to dispatch the queue.
-          enqueuePostPromiseJob(() => dispatchQueue(this));
+          enqueuePostPromiseJob(function () {
+            return dispatchQueue(_this);
+          });
         } else {
           // Otherwise dispatch the (queue of one) immediately.
-          dispatchQueue(this);
+          dispatchQueue(_this);
         }
       }
     });
@@ -115,7 +82,7 @@ class DataLoader<K, V> {
     }
 
     return promise;
-  }
+  };
 
   /**
    * Loads multiple keys, promising an array of values:
@@ -130,42 +97,51 @@ class DataLoader<K, V> {
    *     ]);
    *
    */
-  loadMany(keys: $ReadOnlyArray<K>): Promise<Array<V>> {
+
+
+  DataLoader.prototype.loadMany = function loadMany(keys) {
+    var _this2 = this;
+
     if (!Array.isArray(keys)) {
-      throw new TypeError(
-        'The loader.loadMany() function must be called with Array<key> ' +
-        `but got: ${keys}.`
-      );
+      throw new TypeError('The loader.loadMany() function must be called with Array<key> ' + ('but got: ' + keys + '.'));
     }
-    return Promise.all(keys.map(key => this.load(key)));
-  }
+    return Promise.all(keys.map(function (key) {
+      return _this2.load(key);
+    }));
+  };
 
   /**
    * Clears the value at `key` from the cache, if it exists. Returns itself for
    * method chaining.
    */
-  clear(key: K): DataLoader<K, V> {
+
+
+  DataLoader.prototype.clear = function clear(key) {
     var cacheKeyFn = this._options && this._options.cacheKeyFn;
     var cacheKey = cacheKeyFn ? cacheKeyFn(key) : key;
     this._promiseCache.delete(cacheKey);
     return this;
-  }
+  };
 
   /**
    * Clears the entire cache. To be used when some event results in unknown
    * invalidations across this particular `DataLoader`. Returns itself for
    * method chaining.
    */
-  clearAll(): DataLoader<K, V> {
+
+
+  DataLoader.prototype.clearAll = function clearAll() {
     this._promiseCache.clear();
     return this;
-  }
+  };
 
   /**
    * Adds the provided key and value to the cache. If the key already
    * exists, no change is made. Returns itself for method chaining.
    */
-  prime(key: K, value: V): DataLoader<K, V> {
+
+
+  DataLoader.prototype.prime = function prime(key, value) {
     var cacheKeyFn = this._options && this._options.cacheKeyFn;
     var cacheKey = cacheKeyFn ? cacheKeyFn(key) : key;
 
@@ -173,16 +149,16 @@ class DataLoader<K, V> {
     if (this._promiseCache.get(cacheKey) === undefined) {
       // Cache a rejected promise if the value is an Error, in order to match
       // the behavior of load(key).
-      var promise = value instanceof Error ?
-        Promise.reject(value) :
-        Promise.resolve(value);
+      var promise = value instanceof Error ? Promise.reject(value) : Promise.resolve(value);
 
       this._promiseCache.set(cacheKey, promise);
     }
 
     return this;
-  }
-}
+  };
+
+  return DataLoader;
+}();
 
 // Private: Enqueue a Job to be executed after all "PromiseJobs" Jobs.
 //
@@ -210,22 +186,38 @@ class DataLoader<K, V> {
 // for enqueuing a job to be performed after promise microtasks and before the
 // next macrotask. For browser environments, a macrotask is used (via
 // setImmediate or setTimeout) at a potential performance penalty.
-var enqueuePostPromiseJob =
-  typeof process === 'object' && typeof process.nextTick === 'function' ?
-    function (fn) {
-      if (!resolvedPromise) {
-        resolvedPromise = Promise.resolve();
-      }
-      resolvedPromise.then(() => process.nextTick(fn));
-    } :
-    setImmediate || setTimeout;
+
+
+// If a custom cache is provided, it must be of this type (a subset of ES6 Map).
+
+/**
+ *  Copyright (c) 2015, Facebook, Inc.
+ *  All rights reserved.
+ *
+ *  This source code is licensed under the BSD-style license found in the
+ *  LICENSE file in the root directory of this source tree. An additional grant
+ *  of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+// A Function, which when given an Array of keys, returns a Promise of an Array
+// of values or Errors.
+
+
+var enqueuePostPromiseJob = typeof process === 'object' && typeof process.nextTick === 'function' ? function (fn) {
+  if (!resolvedPromise) {
+    resolvedPromise = Promise.resolve();
+  }
+  resolvedPromise.then(function () {
+    return process.nextTick(fn);
+  });
+} : setImmediate || setTimeout;
 
 // Private: cached resolved Promise instance
 var resolvedPromise;
 
 // Private: given the current state of a Loader instance, perform a batch load
 // from its current queue.
-function dispatchQueue<K, V>(loader: DataLoader<K, V>) {
+function dispatchQueue(loader) {
   // Take the current loader queue, replacing it with an empty queue.
   var queue = loader._queue;
   loader._queue = [];
@@ -235,61 +227,57 @@ function dispatchQueue<K, V>(loader: DataLoader<K, V>) {
   var maxBatchSize = loader._options && loader._options.maxBatchSize;
   if (maxBatchSize && maxBatchSize > 0 && maxBatchSize < queue.length) {
     for (var i = 0; i < queue.length / maxBatchSize; i++) {
-      dispatchQueueBatch(
-        loader,
-        queue.slice(i * maxBatchSize, (i + 1) * maxBatchSize)
-      );
+      dispatchQueueBatch(loader, queue.slice(i * maxBatchSize, (i + 1) * maxBatchSize));
     }
   } else {
     dispatchQueueBatch(loader, queue);
   }
 }
 
-function dispatchQueueBatch<K, V>(
-  loader: DataLoader<K, V>,
-  queue: LoaderQueue<K, V>
-) {
+function dispatchQueueBatch(loader, queue) {
   // Collect all keys to be loaded in this dispatch
-  var keys = queue.map(({ key }) => key);
+  var keys = queue.map(function (_ref) {
+    var key = _ref.key;
+    return key;
+  });
+
+  // Collect the projections 
+  var mainProjection = {}; 
+  queue.forEach(function (_ref) {
+    var projection = _ref.projection;
+    if (projection)
+      Object.keys(projection).forEach(key => {
+        if (typeof mainProjection[key] === 'undefined')
+            mainProjection[key] = 1
+      })
+  })
 
   // Call the provided batchLoadFn for this loader with the loader queue's keys.
   var batchLoadFn = loader._batchLoadFn;
-  var batchPromise = batchLoadFn(keys);
+  var batchPromise = batchLoadFn(keys, mainProjection);
 
   // Assert the expected response from batchLoadFn
   if (!batchPromise || typeof batchPromise.then !== 'function') {
-    return failedDispatch(loader, queue, new TypeError(
-      'DataLoader must be constructed with a function which accepts ' +
-      'Array<key> and returns Promise<Array<value>>, but the function did ' +
-      `not return a Promise: ${String(batchPromise)}.`
-    ));
+    return failedDispatch(loader, queue, new TypeError('DataLoader must be constructed with a function which accepts ' + 'Array<key> and returns Promise<Array<value>>, but the function did ' + ('not return a Promise: ' + String(batchPromise) + '.')));
   }
 
   // Await the resolution of the call to batchLoadFn.
-  batchPromise.then(values => {
+  batchPromise.then(function (values) {
 
     // Assert the expected resolution from batchLoadFn.
     if (!Array.isArray(values)) {
-      throw new TypeError(
-        'DataLoader must be constructed with a function which accepts ' +
-        'Array<key> and returns Promise<Array<value>>, but the function did ' +
-        `not return a Promise of an Array: ${String(values)}.`
-      );
+      throw new TypeError('DataLoader must be constructed with a function which accepts ' + 'Array<key> and returns Promise<Array<value>>, but the function did ' + ('not return a Promise of an Array: ' + String(values) + '.'));
     }
     if (values.length !== keys.length) {
-      throw new TypeError(
-        'DataLoader must be constructed with a function which accepts ' +
-        'Array<key> and returns Promise<Array<value>>, but the function did ' +
-        'not return a Promise of an Array of the same length as the Array ' +
-        'of keys.' +
-        `\n\nKeys:\n${String(keys)}` +
-        `\n\nValues:\n${String(values)}`
-      );
+      throw new TypeError('DataLoader must be constructed with a function which accepts ' + 'Array<key> and returns Promise<Array<value>>, but the function did ' + 'not return a Promise of an Array of the same length as the Array ' + 'of keys.' + ('\n\nKeys:\n' + String(keys)) + ('\n\nValues:\n' + String(values)));
     }
 
     // Step through the values, resolving or rejecting each Promise in the
     // loaded queue.
-    queue.forEach(({ resolve, reject }, index) => {
+    queue.forEach(function (_ref2, index) {
+      var resolve = _ref2.resolve,
+          reject = _ref2.reject;
+
       var value = values[index];
       if (value instanceof Error) {
         reject(value);
@@ -297,46 +285,40 @@ function dispatchQueueBatch<K, V>(
         resolve(value);
       }
     });
-  }).catch(error => failedDispatch(loader, queue, error));
+  }).catch(function (error) {
+    return failedDispatch(loader, queue, error);
+  });
 }
 
 // Private: do not cache individual loads if the entire batch dispatch fails,
 // but still reject each request so they do not hang.
-function failedDispatch<K, V>(
-  loader: DataLoader<K, V>,
-  queue: LoaderQueue<K, V>,
-  error: Error
-) {
-  queue.forEach(({ key, reject }) => {
+function failedDispatch(loader, queue, error) {
+  queue.forEach(function (_ref3) {
+    var key = _ref3.key,
+        reject = _ref3.reject;
+
     loader.clear(key);
     reject(error);
   });
 }
 
 // Private: given the DataLoader's options, produce a CacheMap to be used.
-function getValidCacheMap<K, V>(
-  options: ?Options<K, V>
-): CacheMap<K, Promise<V>> {
+function getValidCacheMap(options) {
   var cacheMap = options && options.cacheMap;
   if (!cacheMap) {
     return new Map();
   }
-  var cacheFunctions = [ 'get', 'set', 'delete', 'clear' ];
-  var missingFunctions = cacheFunctions
-    .filter(fnName => cacheMap && typeof cacheMap[fnName] !== 'function');
+  var cacheFunctions = ['get', 'set', 'delete', 'clear'];
+  var missingFunctions = cacheFunctions.filter(function (fnName) {
+    return cacheMap && typeof cacheMap[fnName] !== 'function';
+  });
   if (missingFunctions.length !== 0) {
-    throw new TypeError(
-      'Custom cacheMap missing methods: ' + missingFunctions.join(', ')
-    );
+    throw new TypeError('Custom cacheMap missing methods: ' + missingFunctions.join(', '));
   }
   return cacheMap;
 }
 
 // Private
-type LoaderQueue<K, V> = Array<{
-  key: K;
-  resolve: (value: V) => void;
-  reject: (error: Error) => void;
-}>;
+
 
 module.exports = DataLoader;
