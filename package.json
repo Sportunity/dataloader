@@ -16,7 +16,7 @@
     "type": "git",
     "url": "http://github.com/facebook/dataloader.git"
   },
-  "main": "index.js",
+  "main": "dist/index.js",
   "typings": "index.d.ts",
   "options": {
     "mocha": "--require resources/mocha-bootload src/**/__tests__/**/*.js"
