@@ -99,14 +99,14 @@ var DataLoader = function () {
    */
 
 
-  DataLoader.prototype.loadMany = function loadMany(keys) {
+  DataLoader.prototype.loadMany = function loadMany(keys, projection) {
     var _this2 = this;
 
     if (!Array.isArray(keys)) {
       throw new TypeError('The loader.loadMany() function must be called with Array<key> ' + ('but got: ' + keys + '.'));
     }
     return Promise.all(keys.map(function (key) {
-      return _this2.load(key);
+      return _this2.load(key, projection);
     }));
   };
 
