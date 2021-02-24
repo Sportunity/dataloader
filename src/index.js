@@ -242,15 +242,17 @@ function dispatchQueueBatch(loader, queue) {
   });
 
   // Collect the projections 
-  var mainProjection = {}, hasProjection = false ;
+  var mainProjection = {}, hasProjection = true ;
   queue.forEach(function (_ref) {
     var projection = _ref.projection;
     if (projection) {
-      hasProjection = true ;
       Object.keys(projection).forEach(key => {
         if (typeof mainProjection[key] === 'undefined')
-            mainProjection[key] = 1
+        mainProjection[key] = 1
       })
+    }
+    else {
+      hasProjection = false ;
     }
   })
 
