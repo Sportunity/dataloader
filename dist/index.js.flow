@@ -242,7 +242,7 @@ function dispatchQueueBatch(loader, queue) {
   });
 
   // Collect the projections 
-  var mainProjection = {}, hasProjection = true ;
+  var mainProjection = {}, hasProjection = queue && queue.length ;
   queue.forEach(function (_ref) {
     var projection = _ref.projection;
     if (projection) {
