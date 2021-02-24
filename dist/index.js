@@ -241,17 +241,21 @@ function dispatchQueueBatch(loader, queue) {
   });
 
   // Collect the projections 
-  var mainProjection = {};
+  var mainProjection = {},
+      hasProjection = false;
   queue.forEach(function (_ref) {
     var projection = _ref.projection;
-    if (projection) Object.keys(projection).forEach(function (key) {
-      if (typeof mainProjection[key] === 'undefined') mainProjection[key] = 1;
-    });
+    if (projection) {
+      hasProjection = true;
+      Object.keys(projection).forEach(function (key) {
+        if (typeof mainProjection[key] === 'undefined') mainProjection[key] = 1;
+      });
+    }
   });
 
   // Call the provided batchLoadFn for this loader with the loader queue's keys.
   var batchLoadFn = loader._batchLoadFn;
-  var batchPromise = batchLoadFn(keys, mainProjection);
+  var batchPromise = batchLoadFn(keys, hasProjection ? mainProjection : null);
 
   // Assert the expected response from batchLoadFn
   if (!batchPromise || typeof batchPromise.then !== 'function') {
